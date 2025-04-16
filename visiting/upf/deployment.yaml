@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: v-upf
-          image: open5gs-v-upf:latest
+          image: docker.io/library/upf:v2.7.5
+          imagePullPolicy: IfNotPresent 
           command: [ "open5gs-upfd", "-c", "/etc/open5gs/upf.yaml" ]
           volumeMounts:
             - name: config

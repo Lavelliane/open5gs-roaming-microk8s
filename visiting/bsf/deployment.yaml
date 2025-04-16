@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: v-bsf
-          image: open5gs-v-bsf:latest
+          image: docker.io/library/bsf:v2.7.5
+          imagePullPolicy: IfNotPresent
           command: [ "open5gs-bsfd", "-c", "/etc/open5gs/bsf.yaml" ]
           volumeMounts:
             - name: config

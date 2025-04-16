@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
       - name: h-ausf
-        image: ausf:v2.7.5
+        image: docker.io/library/ausf:v2.7.5
+        imagePullPolicy: IfNotPresent
         command: ["open5gs-ausfd", "-c", "/etc/open5gs/ausf.yaml"]
         volumeMounts:
         - name: config

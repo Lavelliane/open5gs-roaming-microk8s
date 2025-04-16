@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: h-udm
-          image: udm:latest
+          image: docker.io/library/udm:v2.7.5
+          imagePullPolicy: IfNotPresent
           command: [ "open5gs-udmd", "-c", "/etc/open5gs/udm.yaml" ]
           volumeMounts:
             - name: config

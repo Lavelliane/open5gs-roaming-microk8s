@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: v-pcf
-          image: open5gs-v-pcf:latest
+          image: docker.io/library/pcf:v2.7.5
+          imagePullPolicy: IfNotPresent
           command: [ "open5gs-pcfd", "-c", "/etc/open5gs/pcf.yaml" ]
           volumeMounts:
             - name: config

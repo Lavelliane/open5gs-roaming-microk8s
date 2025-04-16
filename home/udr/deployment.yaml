@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: h-udr
-          image: udr:latest
+          image: docker.io/library/udr:v2.7.5
+          imagePullPolicy: IfNotPresent
           command: [ "open5gs-udrd", "-c", "/etc/open5gs/udr.yaml" ]
           volumeMounts:
             - name: config
