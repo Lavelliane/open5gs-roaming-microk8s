@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: v-pcf
+  namespace: open5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: v-pcf
+  template:
+    metadata:
+      labels:
+        app: v-pcf
+    spec:
+      containers:
+        - name: v-pcf
+          image: open5gs-v-pcf:latest
+          command: [ "open5gs-pcfd", "-c", "/etc/open5gs/pcf.yaml" ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/open5gs/pcf.yaml
+              subPath: pcf.yaml
+          ports:
+            - containerPort: 80
+              name: sbi
+      volumes:
+        - name: config
+          configMap:
+            name: v-pcf-config 

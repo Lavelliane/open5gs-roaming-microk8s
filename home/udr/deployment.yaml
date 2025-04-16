@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: h-udr
+  namespace: open5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: h-udr
+  template:
+    metadata:
+      labels:
+        app: h-udr
+    spec:
+      containers:
+        - name: h-udr
+          image: udr:latest
+          command: [ "open5gs-udrd", "-c", "/etc/open5gs/udr.yaml" ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/open5gs/udr.yaml
+              subPath: udr.yaml
+          ports:
+            - containerPort: 80
+              name: http
+      volumes:
+        - name: config
+          configMap:
+            name: h-udr-config

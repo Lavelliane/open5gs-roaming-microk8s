@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: v-bsf
+  namespace: open5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: v-bsf
+  template:
+    metadata:
+      labels:
+        app: v-bsf
+    spec:
+      containers:
+        - name: v-bsf
+          image: open5gs-v-bsf:latest
+          command: [ "open5gs-bsfd", "-c", "/etc/open5gs/bsf.yaml" ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/open5gs/bsf.yaml
+              subPath: bsf.yaml
+          ports:
+            - containerPort: 80
+              name: sbi
+      volumes:
+        - name: config
+          configMap:
+            name: v-bsf-config 

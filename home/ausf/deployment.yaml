@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: h-ausf
+  namespace: open5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: h-ausf
+  template:
+    metadata:
+      labels:
+        app: h-ausf
+    spec:
+      containers:
+      - name: h-ausf
+        image: ausf:v2.7.5
+        command: ["open5gs-ausfd", "-c", "/etc/open5gs/ausf.yaml"]
+        volumeMounts:
+        - name: config
+          mountPath: /etc/open5gs/ausf.yaml
+          subPath: ausf.yaml
+        - name: logs
+          mountPath: /var/log/open5gs
+      volumes:
+      - name: config
+        configMap:
+          name: h-ausf-config
+      - name: logs
+        emptyDir: {}

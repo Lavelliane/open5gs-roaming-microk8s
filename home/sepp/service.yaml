@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: h-sepp
+  namespace: open5gs
+spec:
+  selector:
+    app: h-sepp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: http

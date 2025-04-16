@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: h-udm
+  namespace: open5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: h-udm
+  template:
+    metadata:
+      labels:
+        app: h-udm
+    spec:
+      containers:
+        - name: h-udm
+          image: udm:latest
+          command: [ "open5gs-udmd", "-c", "/etc/open5gs/udm.yaml" ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/open5gs/udm.yaml
+              subPath: udm.yaml
+          ports:
+            - containerPort: 80
+              name: http
+      volumes:
+        - name: config
+          configMap:
+            name: h-udm-config

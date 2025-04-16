@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: v-bsf-config
+  namespace: open5gs
+data:
+  bsf.yaml: |
+    logger:
+      file:
+        path: /var/log/open5gs/bsf.log
+
+    global:
+
+    bsf:
+      sbi:
+        server:
+          - address: bsf.5gc.mnc070.mcc999.3gppnetwork.org
+            port: 80
+        client:
+          nrf:
+            - uri: http://nrf.5gc.mnc070.mcc999.3gppnetwork.org:80 

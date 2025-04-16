@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: packetrusher
+  namespace: open5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: packetrusher
+  template:
+    metadata:
+      labels:
+        app: packetrusher
+    spec:
+      containers:
+        - name: packetrusher
+          image: packetrusher:latest
+          command: [ "packetrusher", "-c", "/etc/packetrusher/config.yaml" ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/packetrusher/config.yaml
+              subPath: config.yaml
+          ports:
+            - containerPort: 38412
+              name: ngap
+            - containerPort: 2152
+              name: gtpu
+      volumes:
+        - name: config
+          configMap:
+            name: packetrusher-config

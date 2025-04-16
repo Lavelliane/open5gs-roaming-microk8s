@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: v-ausf
+  namespace: open5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: v-ausf
+  template:
+    metadata:
+      labels:
+        app: v-ausf
+    spec:
+      containers:
+        - name: v-ausf
+          image: open5gs-v-ausf:latest
+          command: [ "open5gs-ausfd", "-c", "/etc/open5gs/ausf.yaml" ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/open5gs/ausf.yaml
+              subPath: ausf.yaml
+          ports:
+            - containerPort: 80
+              name: sbi
+      volumes:
+        - name: config
+          configMap:
+            name: v-ausf-config

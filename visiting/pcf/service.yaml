@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: v-pcf
+  namespace: open5gs
+spec:
+  selector:
+    app: v-pcf
+  ports:
+    - name: sbi
+      protocol: TCP
+      port: 80
+      targetPort: sbi 

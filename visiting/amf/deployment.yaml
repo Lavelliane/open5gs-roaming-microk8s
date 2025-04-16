@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: v-amf
+  namespace: open5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: v-amf
+  template:
+    metadata:
+      labels:
+        app: v-amf
+    spec:
+      containers:
+        - name: v-amf
+          image: open5gs-v-amf:latest
+          command: [ "open5gs-amfd", "-c", "/etc/open5gs/amf.yaml" ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/open5gs/amf.yaml
+              subPath: amf.yaml
+          ports:
+            - containerPort: 80
+              name: sbi
+            - containerPort: 38412
+              name: ngap
+      volumes:
+        - name: config
+          configMap:
+            name: v-amf-config

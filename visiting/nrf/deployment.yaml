@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: v-nrf
+  namespace: open5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: v-nrf
+  template:
+    metadata:
+      labels:
+        app: v-nrf
+    spec:
+      containers:
+        - name: v-nrf
+          image: open5gs-v-nrf:latest
+          command: [ "open5gs-nrfd", "-c", "/etc/open5gs/nrf.yaml" ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/open5gs/nrf.yaml
+              subPath: nrf.yaml
+          ports:
+            - containerPort: 80
+              name: sbi
+      volumes:
+        - name: config
+          configMap:
+            name: v-nrf-config 

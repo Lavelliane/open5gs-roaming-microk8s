@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: v-sepp
+  namespace: open5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: v-sepp
+  template:
+    metadata:
+      labels:
+        app: v-sepp
+    spec:
+      containers:
+        - name: v-sepp
+          image: open5gs-v-sepp:latest
+          command: [ "open5gs-seppd", "-c", "/etc/open5gs/sepp.yaml" ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/open5gs/sepp.yaml
+              subPath: sepp.yaml
+          ports:
+            - containerPort: 80
+              name: sbi
+      volumes:
+        - name: config
+          configMap:
+            name: v-sepp-config 
