@@ -1,33 +1,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: packetrusher
+  name: h-sepp
   namespace: open5gs
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: packetrusher
+      app: h-sepp
   template:
     metadata:
       labels:
-        app: packetrusher
+        app: h-sepp
     spec:
       containers:
-        - name: packetrusher
-          image: ghcr.io/borjis131/packetrusher:20250225
+        - name: h-sepp
+          image: docker.io/library/sepp:v2.7.5
           imagePullPolicy: IfNotPresent
-          command: ["/PacketRusher/packetrusher"]
-          args: ["--config", "/PacketRusher/config/packetrusher.yaml", "ue"]
-          securityContext:
-            privileged: true
-            capabilities:
-              add: ["ALL", "NET_ADMIN"]
+          command: [ "open5gs-seppd", "-c", "/etc/open5gs/sepp.yaml" ]
           volumeMounts:
             - name: config
-              mountPath: /PacketRusher/config/packetrusher.yaml
-              subPath: packetrusher.yaml
+              mountPath: /etc/open5gs/sepp.yaml
+              subPath: sepp.yaml
+          ports:
+            - containerPort: 80
+              name: http
       volumes:
         - name: config
           configMap:
-            name: packetrusher-config
+            name: h-sepp-config
