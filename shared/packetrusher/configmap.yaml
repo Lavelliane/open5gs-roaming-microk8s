@@ -48,7 +48,7 @@ data:
         nea3: false
 
     amfif:
-      - ip: 'amf.5gc.mnc070.mcc999.3gppnetwork.org'
+      - ip: 'v-amf.open5gs.svc.cluster.local'
         port: 38412
 
     logs:
