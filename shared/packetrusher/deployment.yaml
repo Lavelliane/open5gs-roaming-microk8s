@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: packetrusher
-          image: packetrusher:latest
+          image: ghcr.io/borjis131/packetrusher:20250225
           command: [ "packetrusher", "-c", "/etc/packetrusher/config.yaml" ]
           volumeMounts:
             - name: config
