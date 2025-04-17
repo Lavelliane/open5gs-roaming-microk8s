@@ -18,14 +18,23 @@ spec:
           image: docker.io/library/upf:v2.7.5
           imagePullPolicy: IfNotPresent 
           command: [ "open5gs-upfd", "-c", "/etc/open5gs/upf.yaml" ]
+          securityContext:
+            privileged: true
           volumeMounts:
             - name: config
               mountPath: /etc/open5gs/upf.yaml
               subPath: upf.yaml
+            - name: dev-net-tun
+              mountPath: /dev/net/tun
+              readOnly: true
           ports:
             - containerPort: 80
               name: sbi
       volumes:
         - name: config
           configMap:
-            name: v-upf-config 
+            name: v-upf-config
+        - name: dev-net-tun
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
