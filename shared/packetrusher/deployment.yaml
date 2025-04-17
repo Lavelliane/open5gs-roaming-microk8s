@@ -15,21 +15,16 @@ spec:
     spec:
       containers:
         - name: packetrusher
-          image: ghcr.io/borjis131/packetrusher:20250225
-          args: [ "--config", "/PacketRusher/config/packetrusher.yaml", "ue" ]
+          image: your-registry/packetrusher:latest  # Replace with your image
+          imagePullPolicy: IfNotPresent
+          workingDir: /PacketRusher
+          command: [ "./packetrusher", "ue" ]
           volumeMounts:
             - name: config
-              mountPath: /PacketRusher/config/packetrusher.yaml
-              subPath: packetrusher.yaml
-          ports:
-            - containerPort: 38412
-              name: ngap
-            - containerPort: 2152
-              name: gtpu
+              mountPath: /PacketRusher/config/config.yml
+              subPath: config.yml
           securityContext:
             privileged: true
-            capabilities:
-              add: [ "NET_ADMIN", "ALL" ]
       volumes:
         - name: config
           configMap:
