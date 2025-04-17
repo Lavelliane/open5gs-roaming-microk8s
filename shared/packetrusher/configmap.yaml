@@ -4,7 +4,7 @@ metadata:
   name: packetrusher-config
   namespace: open5gs
 data:
-  config.yaml: |
+  packetrusher.yaml: |
     gnodeb:
       controlif:
         ip: 'gnb.packetrusher.org'
