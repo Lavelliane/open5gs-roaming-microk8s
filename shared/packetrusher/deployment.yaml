@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: packetrusher
-          image: your-registry/packetrusher:latest  # Replace with your image
+          image: ghcr.io/borjis131/packetrusher:20250225
           imagePullPolicy: IfNotPresent
           workingDir: /PacketRusher
           command: [ "./packetrusher", "ue" ]
