@@ -14,8 +14,8 @@ data:
     ausf:
       sbi:
         server:
-          - address: ausf.5gc.mnc001.mcc001.3gppnetwork.org
+          - address: 0.0.0.0
             port: 80
         client:
           nrf:
-            - uri: http://nrf.5gc.mnc001.mcc001.3gppnetwork.org:80
+            - uri: http://h-nrf.open5gs.svc.cluster.local:80

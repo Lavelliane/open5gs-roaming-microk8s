@@ -14,15 +14,15 @@ data:
     sepp:
       sbi:
         server:
-          - address: sepp.5gc.mnc070.mcc999.3gppnetwork.org
+          - address: 0.0.0.0
             port: 80
         client:
           nrf:
-            - uri: http://nrf.5gc.mnc070.mcc999.3gppnetwork.org:80
+            - uri: http://v-nrf.open5gs.svc.cluster.local:80
       n32:
         server:
-          - sender: sepp.5gc.mnc070.mcc999.3gppnetwork.org
+          - sender: v-sepp.open5gs.svc.cluster.local
         client:
           sepp:
-            - receiver: sepp.5gc.mnc001.mcc001.3gppnetwork.org
-              uri: http://sepp.5gc.mnc001.mcc001.3gppnetwork.org:80 
+            - receiver: h-sepp.open5gs.svc.cluster.local
+              uri: http://h-sepp.open5gs.svc.cluster.local:80 

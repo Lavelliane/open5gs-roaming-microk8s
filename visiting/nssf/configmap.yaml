@@ -14,13 +14,13 @@ data:
     nssf:
       sbi:
         server:
-          - address: nssf.5gc.mnc070.mcc999.3gppnetwork.org
+          - address: 0.0.0.0
             port: 80
         client:
           nrf:
-            - uri: http://nrf.5gc.mnc070.mcc999.3gppnetwork.org:80
+            - uri: http://v-nrf.open5gs.svc.cluster.local:80
           nsi:
-            - uri: http://nrf.5gc.mnc070.mcc999.3gppnetwork.org:80
+            - uri: http://v-nrf.open5gs.svc.cluster.local:80
               s_nssai:
                 sst: 1
                 sd: 000001 

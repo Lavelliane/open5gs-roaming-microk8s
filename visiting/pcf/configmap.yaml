@@ -14,11 +14,11 @@ data:
     pcf:
       sbi:
         server:
-          - address: pcf.5gc.mnc070.mcc999.3gppnetwork.org
+          - address: 0.0.0.0
             port: 80
         client:
           nrf:
-            - uri: http://nrf.5gc.mnc070.mcc999.3gppnetwork.org:80
+            - uri: http://v-nrf.open5gs.svc.cluster.local:80
       policy:
         - plmn_id:
             mcc: 001
