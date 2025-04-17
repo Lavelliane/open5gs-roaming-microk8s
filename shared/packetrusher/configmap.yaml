@@ -7,10 +7,10 @@ data:
   packetrusher.yaml: |
     gnodeb:
       controlif:
-        ip: 'gnb.packetrusher.org'
+        ip: 'packetrusher.open5gs.svc.cluster.local'
         port: 38412
       dataif:
-        ip: 'gnb.packetrusher.org'
+        ip: 'packetrusher.open5gs.svc.cluster.local'
         port: 2152
       plmnlist:
         mcc: '999'
