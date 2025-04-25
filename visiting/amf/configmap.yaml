@@ -19,6 +19,11 @@ data:
         client:
           nrf:
             - uri: http://v-nrf.open5gs.svc.cluster.local:80
+          scp:
+            - uri: http://v-sepp.open5gs.svc.cluster.local:80
+              plmn_id:
+                mcc: 001
+                mnc: 01
       ngap:
         server:
           - address: 0.0.0.0
@@ -45,6 +50,12 @@ data:
         - plmn_id:
             mcc: 999
             mnc: 70
+          s_nssai:
+            - sst: 1
+              sd: 000001
+        - plmn_id:
+            mcc: 001
+            mnc: 01
           s_nssai:
             - sst: 1
               sd: 000001
