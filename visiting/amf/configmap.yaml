@@ -22,8 +22,8 @@ data:
           scp:
             - uri: http://v-sepp.open5gs.svc.cluster.local:80
               plmn_id:
-                mcc: 001
-                mnc: 01
+                mcc: 999
+                mnc: 70
       ngap:
         server:
           - address: 0.0.0.0
