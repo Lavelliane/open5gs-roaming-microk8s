@@ -47,7 +47,7 @@ data:
         nea3: false
 
     amfif:
-      - ip: 'v-amf.open5gs.svc.cluster.local'
+      - ip: 'v-amf'
         port: 38412
 
     logs:
