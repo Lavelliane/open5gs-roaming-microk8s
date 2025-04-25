@@ -9,10 +9,10 @@ spec:
     app: v-upf
   ports:
   - name: pfcp
-    protocol: TCP
+    protocol: UDP  # Changed from TCP
     port: 8805
     targetPort: 8805
   - name: gtpu
-    protocol: TCP
+    protocol: UDP  # Changed from TCP
     port: 2152
     targetPort: 2152

@@ -23,8 +23,17 @@ spec:
             - name: config
               mountPath: /PacketRusher/config/config.yml
               subPath: config.yml
+          ports:
+            - containerPort: 38412
+              name: ngap
+              protocol: UDP
+            - containerPort: 2152
+              name: gtpu
+              protocol: UDP
           securityContext:
             privileged: true
+            capabilities:
+              add: ["NET_ADMIN"]
       volumes:
         - name: config
           configMap:
