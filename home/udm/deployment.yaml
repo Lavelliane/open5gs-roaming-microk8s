@@ -17,7 +17,7 @@ spec:
         - name: h-udm
           image: docker.io/library/udm:v2.7.5
           imagePullPolicy: IfNotPresent
-          command: [ "open5gs-udmd", "-c", "/etc/open5gs/udm.yaml" ]
+          command: [ "open5gs-udmd", "-c", "/etc/open5gs/udm.yaml", "-a", "h-udm.open5gs.svc.cluster.local" ]
           volumeMounts:
             - name: config
               mountPath: /etc/open5gs/udm.yaml

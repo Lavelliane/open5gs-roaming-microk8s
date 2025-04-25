@@ -17,7 +17,7 @@ spec:
         - name: v-sepp
           image: docker.io/library/sepp:v2.7.5
           imagePullPolicy: IfNotPresent
-          command: [ "open5gs-seppd", "-c", "/etc/open5gs/sepp.yaml" ]
+          command: [ "open5gs-seppd", "-c", "/etc/open5gs/sepp.yaml", "-a", "v-sepp.open5gs.svc.cluster.local" ]
           volumeMounts:
             - name: config
               mountPath: /etc/open5gs/sepp.yaml

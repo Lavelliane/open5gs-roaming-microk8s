@@ -17,7 +17,7 @@ spec:
         - name: v-upf
           image: docker.io/library/upf:v2.7.5
           imagePullPolicy: IfNotPresent 
-          command: [ "open5gs-upfd", "-c", "/etc/open5gs/upf.yaml" ]
+          command: [ "open5gs-upfd", "-c", "/etc/open5gs/upf.yaml", "-a", "v-upf.open5gs.svc.cluster.local" ]
           securityContext:
             privileged: true
           volumeMounts:

@@ -17,7 +17,7 @@ spec:
         - name: v-bsf
           image: docker.io/library/bsf:v2.7.5
           imagePullPolicy: IfNotPresent
-          command: [ "open5gs-bsfd", "-c", "/etc/open5gs/bsf.yaml" ]
+          command: [ "open5gs-bsfd", "-c", "/etc/open5gs/bsf.yaml", "-a", "v-bsf.open5gs.svc.cluster.local" ]
           volumeMounts:
             - name: config
               mountPath: /etc/open5gs/bsf.yaml
