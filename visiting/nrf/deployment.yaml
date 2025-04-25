@@ -17,7 +17,7 @@ spec:
         - name: v-nrf
           image: docker.io/library/nrf:v2.7.5
           imagePullPolicy: IfNotPresent
-          command: [ "open5gs-nrfd", "-c", "/etc/open5gs/nrf.yaml", "-a", "v-nrf.open5gs.svc.cluster.local" ]
+          command: [ "open5gs-nrfd", "-c", "/etc/open5gs/nrf.yaml" ]
           volumeMounts:
             - name: config
               mountPath: /etc/open5gs/nrf.yaml

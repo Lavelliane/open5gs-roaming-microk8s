@@ -17,7 +17,7 @@ spec:
       - name: h-ausf
         image: docker.io/library/ausf:v2.7.5
         imagePullPolicy: IfNotPresent
-        command: ["open5gs-ausfd", "-c", "/etc/open5gs/ausf.yaml", "-a", "h-ausf.open5gs.svc.cluster.local"]
+        command: ["open5gs-ausfd", "-c", "/etc/open5gs/ausf.yaml"]
         volumeMounts:
         - name: config
           mountPath: /etc/open5gs/ausf.yaml

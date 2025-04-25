@@ -17,7 +17,7 @@ spec:
         - name: h-udr
           image: docker.io/library/udr:v2.7.5
           imagePullPolicy: IfNotPresent
-          command: [ "open5gs-udrd", "-c", "/etc/open5gs/udr.yaml", "-a", "h-udr.open5gs.svc.cluster.local" ]
+          command: [ "open5gs-udrd", "-c", "/etc/open5gs/udr.yaml" ]
           volumeMounts:
             - name: config
               mountPath: /etc/open5gs/udr.yaml

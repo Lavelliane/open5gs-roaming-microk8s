@@ -17,7 +17,7 @@ spec:
         - name: v-smf
           image: docker.io/library/smf:v2.7.5
           imagePullPolicy: IfNotPresent
-          command: [ "open5gs-smfd", "-c", "/etc/open5gs/smf.yaml", "-a", "v-smf.open5gs.svc.cluster.local" ]
+          command: [ "open5gs-smfd", "-c", "/etc/open5gs/smf.yaml" ]
           volumeMounts:
             - name: config
               mountPath: /etc/open5gs/smf.yaml
