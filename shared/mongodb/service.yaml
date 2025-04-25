@@ -4,6 +4,7 @@ metadata:
   name: mongodb
   namespace: open5gs
 spec:
+  type: ClusterIP
   selector:
     app: mongodb
   ports:

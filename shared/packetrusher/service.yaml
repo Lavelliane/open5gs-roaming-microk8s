@@ -4,6 +4,7 @@ metadata:
   name: packetrusher
   namespace: open5gs
 spec:
+  type: ClusterIP
   selector:
     app: packetrusher
   ports:

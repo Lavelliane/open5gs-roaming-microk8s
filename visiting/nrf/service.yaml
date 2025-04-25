@@ -4,6 +4,7 @@ metadata:
   name: v-nrf
   namespace: open5gs
 spec:
+  type: ClusterIP
   selector:
     app: v-nrf
   ports:

@@ -4,6 +4,7 @@ metadata:
   name: h-udr
   namespace: open5gs
 spec:
+  type: ClusterIP
   selector:
     app: h-udr
   ports:

@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  namespace: open5gs
+spec:
+  serviceName: mongodb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:4.4
+          command: ["mongod", "--bind_ip", "0.0.0.0", "--port", "27017"]
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: db-data
+              mountPath: /data/db
+            - name: db-config
+              mountPath: /data/configdb
+  volumeClaimTemplates:
+    - metadata:
+        name: db-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi
+    - metadata:
+        name: db-config
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 500Mi 
