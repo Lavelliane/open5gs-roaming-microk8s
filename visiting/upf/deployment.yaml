@@ -13,6 +13,7 @@ spec:
       labels:
         app: v-upf
     spec:
+      hostNetwork: true  # Add this for direct host network access
       containers:
         - name: v-upf
           image: docker.io/library/upf:v2.7.5
@@ -20,6 +21,8 @@ spec:
           command: [ "open5gs-upfd", "-c", "/etc/open5gs/upf.yaml" ]
           securityContext:
             privileged: true
+            capabilities:
+              add: ["NET_ADMIN", "NET_RAW", "SYS_ADMIN"]
           volumeMounts:
             - name: config
               mountPath: /etc/open5gs/upf.yaml
@@ -27,6 +30,8 @@ spec:
             - name: dev-net-tun
               mountPath: /dev/net/tun
               readOnly: true
+            - name: var-log
+              mountPath: /var/log/open5gs
           ports:
             - name: pfcp
               containerPort: 8805
@@ -42,3 +47,5 @@ spec:
           hostPath:
             path: /dev/net/tun
             type: CharDevice
+        - name: var-log
+          emptyDir: {}

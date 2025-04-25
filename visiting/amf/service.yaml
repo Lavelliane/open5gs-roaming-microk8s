@@ -4,7 +4,7 @@ metadata:
   name: v-amf
   namespace: open5gs
 spec:
-  type: ClusterIP
+  type: NodePort  # Change to NodePort for external access if needed
   selector:
     app: v-amf
   ports:
@@ -15,4 +15,5 @@ spec:
     - name: ngap
       port: 38412
       targetPort: 38412
-      protocol: SCTP 
+      protocol: SCTP
+      nodePort: 30412  # Add this if you need external access
