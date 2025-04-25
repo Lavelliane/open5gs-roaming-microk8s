@@ -28,8 +28,12 @@ spec:
               mountPath: /dev/net/tun
               readOnly: true
           ports:
-            - containerPort: 80
-              name: sbi
+            - name: pfcp
+              containerPort: 8805
+              protocol: UDP
+            - name: gtpu
+              containerPort: 2152
+              protocol: UDP
       volumes:
         - name: config
           configMap:
