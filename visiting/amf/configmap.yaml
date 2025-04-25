@@ -8,7 +8,7 @@ data:
     logger:
       file:
         path: /var/log/open5gs/amf.log
-      level: debug
+      level: trace
 
     global:
 

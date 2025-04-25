@@ -8,7 +8,7 @@ data:
     logger:
       file:
         path: /var/log/open5gs/ausf.log
-      level: debug
+      level: trace
 
     global:
 
