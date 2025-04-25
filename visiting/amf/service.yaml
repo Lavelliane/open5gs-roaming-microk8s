@@ -8,10 +8,10 @@ spec:
     app: v-amf
   ports:
     - name: sbi
-      protocol: TCP
       port: 80
-      targetPort: sbi
+      targetPort: 80
+      protocol: TCP
     - name: ngap
-      protocol: UDP
       port: 38412
-      targetPort: ngap
+      targetPort: 38412
+      protocol: SCTP 

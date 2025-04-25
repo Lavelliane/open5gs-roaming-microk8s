@@ -49,7 +49,7 @@ data:
             - sst: 1
               sd: 000001
       security:
-        integrity_order: [ NIA2, NIA1, NIA0 ]
+        integrity_order: [ NIA2, NIA0, NIA1 ]
         ciphering_order: [ NEA0, NEA1, NEA2 ]
       network_name:
         full: Open5GS
