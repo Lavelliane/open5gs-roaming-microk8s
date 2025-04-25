@@ -60,7 +60,7 @@ data:
               sd: 000001
       security:
         integrity_order: [ NIA2, NIA0, NIA1 ]
-        ciphering_order: [ NEA0, NEA1, NEA2 ]
+        ciphering_order: [ NEA0, NEA2, NEA1 ]
       network_name:
         full: Open5GS
       amf_name: open5gs-amf0

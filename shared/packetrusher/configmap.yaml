@@ -34,7 +34,6 @@ data:
         sd: '000001'
       amf: '8000'
       sqn: '00000000'
-      routingindicator: '0000'
       protectionScheme: 0
       integrity:
         nia0: false
