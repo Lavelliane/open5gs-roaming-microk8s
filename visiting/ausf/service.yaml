@@ -4,11 +4,10 @@ metadata:
   name: v-ausf
   namespace: open5gs
 spec:
-  type: ClusterIP
   selector:
     app: v-ausf
   ports:
     - name: sbi
-      protocol: TCP
-      port: 80
-      targetPort: sbi
+      port: 7777
+      targetPort: 7777
+  type: ClusterIP
