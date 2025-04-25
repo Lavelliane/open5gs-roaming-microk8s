@@ -8,11 +8,7 @@ spec:
   selector:
     app: v-upf
   ports:
-  - name: pfcp
-    protocol: UDP  # Changed from TCP
-    port: 8805
-    targetPort: 8805
-  - name: gtpu
-    protocol: UDP  # Changed from TCP
-    port: 2152
-    targetPort: 2152
+    - name: sbi
+      protocol: TCP
+      port: 80
+      targetPort: sbi 
