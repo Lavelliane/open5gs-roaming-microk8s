@@ -23,7 +23,7 @@ spec:
               mountPath: /etc/open5gs/ausf.yaml
               subPath: ausf.yaml
           ports:
-            - containerPort: 7777
+            - containerPort: 80
               name: sbi
       volumes:
         - name: config

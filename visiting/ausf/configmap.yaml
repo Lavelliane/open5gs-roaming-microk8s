@@ -15,8 +15,10 @@ data:
       sbi:
         server:
           - address: 0.0.0.0
-            port: 7777
+            port: 80
+        advertise:
+          - address: v-ausf.open5gs.svc.cluster.local
+            port: 80
         client:
           nrf:
             - uri: http://v-nrf.open5gs.svc.cluster.local:80
-        advertise: v-ausf.open5gs.svc.cluster.local:7777
