@@ -22,9 +22,11 @@ data:
       pfcp:
         server:
           - address: 0.0.0.0
+            port: 8805
         client:
           upf:
             - address: v-upf.open5gs.svc.cluster.local
+              port: 8805
       gtpu:
         server:
           - address: 0.0.0.0

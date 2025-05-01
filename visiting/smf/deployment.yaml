@@ -25,6 +25,10 @@ spec:
           ports:
             - containerPort: 80
               name: sbi
+              protocol: TCP
+            - containerPort: 8805
+              name: pfcp
+              protocol: UDP
       volumes:
         - name: config
           configMap:
