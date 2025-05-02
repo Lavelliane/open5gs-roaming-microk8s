@@ -15,4 +15,3 @@ spec:
       port: 38412
       targetPort: 38412
       protocol: SCTP
-      nodePort: 30412  # Add this if you need external access
