@@ -7,6 +7,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
+  storageClassName: microk8s-hostpath
   resources:
     requests:
       storage: 100Mi
@@ -39,6 +40,22 @@ spec:
       labels:
         app: v-sepp
     spec:
+      initContainers:
+          - name: init-tls-dirs
+            image: docker.io/library/sepp:v2.7.5
+            command: ["/bin/bash", "-c"]
+            args:
+              - |
+                mkdir -p /etc/open5gs/default/tls
+                mkdir -p /etc/open5gs/default/ca
+                chmod -R 777 /etc/open5gs/default/tls
+                chmod -R 777 /etc/open5gs/default/ca
+                echo "TLS directories initialized"
+            volumeMounts:
+              - name: certs
+                mountPath: /etc/open5gs/default/tls
+              - name: ca
+                mountPath: /etc/open5gs/default/ca
       containers:
         - name: v-sepp
           image: docker.io/library/sepp:v2.7.5
