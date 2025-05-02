@@ -348,13 +348,6 @@ deploy_components "home/sepp" "Home"
 deploy_components "visiting/sepp" "Visiting"
 echo -e "${GREEN}Core Network Functions deployed successfully${NC}"
 
-# Add after both SEPPs are deployed
-echo -e "${BLUE}Verifying SEPP certificate volumes...${NC}"
-microk8s kubectl get pvc -n $NAMESPACE | grep -E "h-sepp-certs|v-sepp-certs"
-if [ $? -ne 0 ]; then
-  echo -e "${YELLOW}Warning: SEPP certificate volumes may not be properly provisioned${NC}"
-fi
-
 # Deploy User Plane and Mobility Functions (SMF, UPF, AMF)
 echo -e "${YELLOW}[4/4] Deploying User Plane and Mobility Management components...${NC}"
 deploy_components "visiting/smf" "Visiting"
