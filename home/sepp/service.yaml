@@ -8,6 +8,15 @@ spec:
   selector:
     app: h-sepp
   ports:
-    - protocol: TCP
-      port: 80
-      targetPort: http
+  - name: sbi
+    protocol: TCP
+    port: 80
+    targetPort: 80
+  - name: n32c
+    protocol: TCP
+    port: 7778
+    targetPort: 7778
+  - name: n32f
+    protocol: TCP
+    port: 7779
+    targetPort: 7779

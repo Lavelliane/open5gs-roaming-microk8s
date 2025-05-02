@@ -18,7 +18,7 @@ spec:
           image: ghcr.io/borjis131/packetrusher:20250225
           imagePullPolicy: IfNotPresent
           workingDir: /PacketRusher
-          command: [ "./packetrusher", "ue" ]
+          command: ["./packetrusher", "--config", "/PacketRusher/config/config.yml", "ue"]
           volumeMounts:
             - name: config
               mountPath: /PacketRusher/config/config.yml
@@ -26,14 +26,14 @@ spec:
           ports:
             - containerPort: 38412
               name: ngap
-              protocol: UDP
+              protocol: SCTP
             - containerPort: 2152
               name: gtpu
               protocol: UDP
           securityContext:
             privileged: true
             capabilities:
-              add: ["NET_ADMIN"]
+              add: ["NET_ADMIN", "SYS_ADMIN"]
       volumes:
         - name: config
           configMap:

@@ -1,3 +1,29 @@
+# First, define the Persistent Volume Claims
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: v-sepp-certs
+  namespace: open5gs
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: v-sepp-ca
+  namespace: open5gs
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+# Then, define the Deployment with updated configuration
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,14 +44,43 @@ spec:
           image: docker.io/library/sepp:v2.7.5
           imagePullPolicy: IfNotPresent
           command: [ "open5gs-seppd", "-c", "/etc/open5gs/sepp.yaml" ]
+          env:
+            - name: SEPP_TYPE
+              value: "sepp2"
+            - name: REGENERATE_CERTS
+              value: "true"
+            - name: TLS_DIR
+              value: "/etc/open5gs/default/tls"
+            - name: SEPP_FQDN
+              value: "v-sepp.open5gs.svc.cluster.local"
+            - name: SEPP_PLMN_FQDN
+              value: "sepp.5gc.mnc070.mcc999.3gppnetwork.org"
           volumeMounts:
             - name: config
               mountPath: /etc/open5gs/sepp.yaml
               subPath: sepp.yaml
+            - name: certs
+              mountPath: /etc/open5gs/default/tls
+            - name: ca
+              mountPath: /etc/open5gs/default/ca
+            - name: logs
+              mountPath: /var/log/open5gs
           ports:
             - containerPort: 80
-              name: sbi
+              name: http
+            - containerPort: 7778
+              name: n32c
+            - containerPort: 7779
+              name: n32f
       volumes:
         - name: config
           configMap:
-            name: v-sepp-config 
+            name: v-sepp-config
+        - name: certs
+          persistentVolumeClaim:
+            claimName: v-sepp-certs
+        - name: ca
+          persistentVolumeClaim:
+            claimName: v-sepp-ca
+        - name: logs
+          emptyDir: {}

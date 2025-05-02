@@ -13,7 +13,25 @@ spec:
       labels:
         app: v-upf
     spec:
-      hostNetwork: true  # Add this for direct host network access
+      initContainers:
+        - name: setup-network
+          image: docker.io/library/upf:v2.7.5
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["NET_ADMIN", "SYS_ADMIN", "NET_RAW"]
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              sysctl -w net.ipv4.ip_forward=1
+              ip tuntap add name ogstun mode tun
+              ip addr add 10.45.0.1/16 dev ogstun
+              ip link set ogstun up
+              echo "Network interfaces configured successfully"
+          volumeMounts:
+            - name: dev-net-tun
+              mountPath: /dev/net/tun
+              readOnly: false
       containers:
         - name: v-upf
           image: docker.io/library/upf:v2.7.5
@@ -22,14 +40,14 @@ spec:
           securityContext:
             privileged: true
             capabilities:
-              add: ["NET_ADMIN", "NET_RAW", "SYS_ADMIN"]
+              add: ["NET_ADMIN", "SYS_ADMIN", "NET_RAW"]
           volumeMounts:
             - name: config
               mountPath: /etc/open5gs/upf.yaml
               subPath: upf.yaml
             - name: dev-net-tun
               mountPath: /dev/net/tun
-              readOnly: true
+              readOnly: false
             - name: var-log
               mountPath: /var/log/open5gs
           ports:

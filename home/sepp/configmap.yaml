@@ -10,8 +10,18 @@ data:
         path: /var/log/open5gs/sepp.log
 
     global:
+      max:
+        ue: 1024
 
     sepp:
+      default:
+        tls:
+          server:
+            private_key: /etc/open5gs/default/tls/sepp1.key
+            cert: /etc/open5gs/default/tls/sepp1.chain.crt
+          client:
+            cacert: /etc/open5gs/default/tls/ca-bundle.crt
+            verify: true
       sbi:
         server:
           - address: 0.0.0.0
@@ -22,7 +32,18 @@ data:
       n32:
         server:
           - sender: h-sepp.open5gs.svc.cluster.local
+            scheme: https
+            address: 0.0.0.0
+            port: 7778
+            n32f:
+              scheme: https
+              address: 0.0.0.0
+              port: 7779
         client:
           sepp:
             - receiver: v-sepp.open5gs.svc.cluster.local
-              uri: http://v-sepp.open5gs.svc.cluster.local:80
+              uri: https://v-sepp.open5gs.svc.cluster.local:7778
+              verify_client: true
+              n32f:
+                uri: https://v-sepp.open5gs.svc.cluster.local:7779
+                verify_client: true
