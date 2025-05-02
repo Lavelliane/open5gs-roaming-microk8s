@@ -4,7 +4,6 @@ metadata:
   name: v-nssf
   namespace: open5gs
 spec:
-  type: ClusterIP
   selector:
     app: v-nssf
   ports:

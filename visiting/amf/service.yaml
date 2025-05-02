@@ -4,7 +4,6 @@ metadata:
   name: v-amf
   namespace: open5gs
 spec:
-  type: NodePort  # Change to NodePort for external access if needed
   selector:
     app: v-amf
   ports:

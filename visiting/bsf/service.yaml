@@ -4,7 +4,6 @@ metadata:
   name: v-bsf
   namespace: open5gs
 spec:
-  type: ClusterIP
   selector:
     app: v-bsf
   ports:

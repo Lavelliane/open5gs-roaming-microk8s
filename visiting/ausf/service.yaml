@@ -4,7 +4,6 @@ metadata:
   name: v-ausf
   namespace: open5gs
 spec:
-  type: ClusterIP
   selector:
     app: v-ausf
   ports:

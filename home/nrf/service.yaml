@@ -4,7 +4,6 @@ metadata:
   name: h-nrf
   namespace: open5gs
 spec:
-  type: ClusterIP
   selector:
     app: h-nrf
   ports:

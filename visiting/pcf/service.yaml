@@ -4,7 +4,6 @@ metadata:
   name: v-pcf
   namespace: open5gs
 spec:
-  type: ClusterIP
   selector:
     app: v-pcf
   ports:
