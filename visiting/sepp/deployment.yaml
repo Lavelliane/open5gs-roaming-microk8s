@@ -40,27 +40,12 @@ spec:
       labels:
         app: v-sepp
     spec:
-      initContainers:
-          - name: init-tls-dirs
-            image: docker.io/library/sepp:v2.7.5
-            command: ["/bin/bash", "-c"]
-            args:
-              - |
-                mkdir -p /etc/open5gs/default/tls
-                mkdir -p /etc/open5gs/default/ca
-                chmod -R 777 /etc/open5gs/default/tls
-                chmod -R 777 /etc/open5gs/default/ca
-                echo "TLS directories initialized"
-            volumeMounts:
-              - name: certs
-                mountPath: /etc/open5gs/default/tls
-              - name: ca
-                mountPath: /etc/open5gs/default/ca
       containers:
         - name: v-sepp
           image: docker.io/library/sepp:v2.7.5
           imagePullPolicy: IfNotPresent
-          command: [ "open5gs-seppd", "-c", "/etc/open5gs/sepp.yaml" ]
+          command: ["/entrypoint.sh"]  # Use the entrypoint script
+          args: ["-c", "/etc/open5gs/sepp.yaml"]
           env:
             - name: SEPP_TYPE
               value: "sepp2"
@@ -94,10 +79,8 @@ spec:
           configMap:
             name: v-sepp-config
         - name: certs
-          persistentVolumeClaim:
-            claimName: v-sepp-certs
+          emptyDir: {}  # Use emptyDir instead of PVC
         - name: ca
-          persistentVolumeClaim:
-            claimName: v-sepp-ca
+          emptyDir: {}  # Use emptyDir instead of PVC
         - name: logs
           emptyDir: {}
