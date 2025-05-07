@@ -157,50 +157,31 @@ EOF
   fi
 }
 
-# Function to migrate with Multus annotations
-migrate_component_with_multus() {
-  local src_dir=$1
-  local dest_dir=$2
-  local component=$3
-  local multus_annotations=$4
+# Function to directly add Multus annotations 
+add_multus_annotations() {
+  local file=$1
+  local annotations=$2
   
-  # First perform regular migration
-  migrate_component "$src_dir" "$dest_dir"
+  echo -e "${BLUE}Adding Multus annotations to $file${NC}"
   
-  # If deployment exists, add Multus annotations
-  if [ -f "$dest_dir/deployment.yaml" ]; then
-    echo -e "${BLUE}Adding Multus annotations to $dest_dir/deployment.yaml${NC}"
-    
-    # Create a temporary file
-    TEMP_FILE=$(mktemp)
-    
-    # Add annotations to the pod template
-    AWK_SCRIPT=$(cat << 'EOF'
-BEGIN { in_metadata = 0; annotation_added = 0; }
-/metadata:/ && !in_metadata { in_metadata = 1; next; }
-/^ {4}labels:/ && in_metadata {
-  print $0;
-  print "      annotations:";
-  print "        k8s.v1.cni.cncf.io/networks: |";
-  print "          MULTUS_ANNOTATION";
-  annotation_added = 1;
-  next;
-}
-{ print $0; }
-EOF
-)
-    
-    awk -v multus="$multus_annotations" '{ gsub("MULTUS_ANNOTATION", multus); print }' <<< "$AWK_SCRIPT" > "$TEMP_FILE"
-    
-    # Use the script to modify the deployment file
-    awk -f "$TEMP_FILE" "$dest_dir/deployment.yaml" > "$dest_dir/deployment.yaml.new"
-    mv "$dest_dir/deployment.yaml.new" "$dest_dir/deployment.yaml"
-    
-    # Clean up
-    rm "$TEMP_FILE"
-    
-    echo -e "${GREEN}Added Multus annotations to $dest_dir/deployment.yaml${NC}"
-  fi
+  # Create a temporary file
+  local tmp_file=$(mktemp)
+  
+  # Use a simpler approach - find the line with "labels:" and add annotations
+  while IFS= read -r line; do
+    echo "$line" >> "$tmp_file"
+    # Check if this line contains the labels section
+    if [[ "$line" =~ "labels:" ]]; then
+      echo "      annotations:" >> "$tmp_file"
+      echo "        k8s.v1.cni.cncf.io/networks: |" >> "$tmp_file"
+      echo "          $annotations" >> "$tmp_file"
+    fi
+  done < "$file"
+  
+  # Replace original file with modified file
+  mv "$tmp_file" "$file"
+  
+  echo -e "${GREEN}Added Multus annotations to $file${NC}"
 }
 
 # Migrate MongoDB
@@ -235,7 +216,10 @@ for component in nrf ausf nssf bsf pcf sepp; do
   migrate_component "visiting/$component" "kustomize/base/visiting/$component"
 done
 
-# Migrate SMF with Multus annotations
+# Migrate SMF with Multus
+migrate_component "visiting/smf" "kustomize/base/visiting/smf"
+
+# Add Multus annotations to SMF
 SMF_MULTUS='[
   {
     "name": "pfcp-network",
@@ -248,18 +232,99 @@ SMF_MULTUS='[
     "ips": ["192.168.20.102/24"]
   }
 ]'
-migrate_component_with_multus "visiting/smf" "kustomize/base/visiting/smf" "v-smf" "$SMF_MULTUS"
 
-# Modify SMF config file with Multus interface IPs
+if [ -f "kustomize/base/visiting/smf/deployment.yaml" ]; then
+  # Create SMF deployment with annotations
+  cat > kustomize/base/visiting/smf/deployment.yaml.new << EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: v-smf
+  namespace: open5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: v-smf
+  template:
+    metadata:
+      labels:
+        app: v-smf
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |
+          $SMF_MULTUS
+    spec:
+      containers:
+        - name: v-smf
+          image: docker.io/library/smf:v2.7.5
+          imagePullPolicy: IfNotPresent
+          command: [ "open5gs-smfd", "-c", "/etc/open5gs/smf.yaml" ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/open5gs/smf.yaml
+              subPath: smf.yaml
+          ports:
+            - containerPort: 80
+              name: sbi
+              protocol: TCP
+            - containerPort: 8805
+              name: pfcp
+              protocol: UDP
+      volumes:
+        - name: config
+          configMap:
+            name: v-smf-config
+EOF
+  mv kustomize/base/visiting/smf/deployment.yaml.new kustomize/base/visiting/smf/deployment.yaml
+  echo -e "${GREEN}Created SMF deployment with Multus annotations${NC}"
+fi
+
+# Update SMF config
 if [ -f "kustomize/base/visiting/smf/smf.yaml" ]; then
-  # Use perl instead of sed for safer multiline replacements
-  perl -i -pe 's/address: 0.0.0.0/address: 192.168.10.102/g' "kustomize/base/visiting/smf/smf.yaml"
-  perl -i -pe 's/upf:\s*\n\s*- address: v-upf.open5gs.svc.cluster.local/upf:\n            - address: 192.168.10.101/g' "kustomize/base/visiting/smf/smf.yaml"
-  perl -i -pe 's/server:\s*\n\s*- address: 0.0.0.0/server:\n          - address: 192.168.20.102/g' "kustomize/base/visiting/smf/smf.yaml"
+  # Use direct file editing
+  cat > kustomize/base/visiting/smf/smf.yaml.new << EOF
+logger:
+  file:
+    path: /var/log/open5gs/smf.log
+  level: trace
+
+global:
+
+smf:
+  sbi:
+    server:
+      - address: 0.0.0.0
+        port: 80
+    client:
+      nrf:
+        - uri: http://v-nrf.open5gs.svc.cluster.local:80
+  pfcp:
+    server:
+      - address: 192.168.10.102
+        port: 8805
+    client:
+      upf:
+        - address: 192.168.10.101
+          port: 8805
+  gtpu:
+    server:
+      - address: 192.168.20.102
+  session:
+    - subnet: 10.45.0.0/16
+      gateway: 10.45.0.1
+  dns:
+    - 8.8.8.8
+    - 8.8.4.4
+  mtu: 1400
+EOF
+  mv kustomize/base/visiting/smf/smf.yaml.new kustomize/base/visiting/smf/smf.yaml
   echo -e "${GREEN}Updated SMF config with Multus IPs${NC}"
 fi
 
-# Migrate UPF with Multus annotations
+# Migrate UPF
+migrate_component "visiting/upf" "kustomize/base/visiting/upf"
+
+# Add Multus annotations to UPF
 UPF_MULTUS='[
   {
     "name": "pfcp-network",
@@ -272,16 +337,99 @@ UPF_MULTUS='[
     "ips": ["192.168.20.101/24"]
   }
 ]'
-migrate_component_with_multus "visiting/upf" "kustomize/base/visiting/upf" "v-upf" "$UPF_MULTUS"
 
-# Modify UPF config file with Multus interface IPs
+if [ -f "kustomize/base/visiting/upf/deployment.yaml" ]; then
+  # Create UPF deployment with annotations
+  cat > kustomize/base/visiting/upf/deployment.yaml.new << EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: v-upf
+  namespace: open5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: v-upf
+  template:
+    metadata:
+      labels:
+        app: v-upf
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |
+          $UPF_MULTUS
+    spec:
+      containers:
+        - name: v-upf
+          image: docker.io/library/upf:v2.7.5
+          imagePullPolicy: IfNotPresent 
+          command: [ "open5gs-upfd", "-c", "/etc/open5gs/upf.yaml" ]
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["NET_ADMIN", "NET_RAW", "SYS_ADMIN"]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/open5gs/upf.yaml
+              subPath: upf.yaml
+            - name: dev-net-tun
+              mountPath: /dev/net/tun
+              readOnly: true
+            - name: var-log
+              mountPath: /var/log/open5gs
+          ports:
+            - name: pfcp
+              containerPort: 8805
+              protocol: UDP
+            - name: gtpu
+              containerPort: 2152
+              protocol: UDP
+      volumes:
+        - name: config
+          configMap:
+            name: v-upf-config
+        - name: dev-net-tun
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+        - name: var-log
+          emptyDir: {}
+EOF
+  mv kustomize/base/visiting/upf/deployment.yaml.new kustomize/base/visiting/upf/deployment.yaml
+  echo -e "${GREEN}Created UPF deployment with Multus annotations${NC}"
+fi
+
+# Update UPF config
 if [ -f "kustomize/base/visiting/upf/upf.yaml" ]; then
-  perl -i -pe 's/address: 0.0.0.0/address: 192.168.10.101/g' "kustomize/base/visiting/upf/upf.yaml"
-  perl -i -pe 's/server:\s*\n\s*- address: 0.0.0.0/server:\n          - address: 192.168.20.101/g' "kustomize/base/visiting/upf/upf.yaml"
+  # Direct file editing
+  cat > kustomize/base/visiting/upf/upf.yaml.new << EOF
+logger:
+  file:
+    path: /var/log/open5gs/upf.log
+  level: trace
+
+global:
+
+upf:
+  pfcp:
+    server:
+      - address: 192.168.10.101
+        port: 8805
+  gtpu:
+    server:
+      - address: 192.168.20.101
+  session:
+    - subnet: 10.45.0.0/16
+      gateway: 10.45.0.1
+EOF
+  mv kustomize/base/visiting/upf/upf.yaml.new kustomize/base/visiting/upf/upf.yaml
   echo -e "${GREEN}Updated UPF config with Multus IPs${NC}"
 fi
 
-# Migrate AMF with Multus annotations
+# Migrate AMF
+migrate_component "visiting/amf" "kustomize/base/visiting/amf"
+
+# Add Multus annotations to AMF
 AMF_MULTUS='[
   {
     "name": "ngap-network",
@@ -289,33 +437,80 @@ AMF_MULTUS='[
     "ips": ["192.168.30.101/24"]
   }
 ]'
-migrate_component_with_multus "visiting/amf" "kustomize/base/visiting/amf" "v-amf" "$AMF_MULTUS"
 
-# Modify AMF config file with Multus interface IPs
+if [ -f "kustomize/base/visiting/amf/deployment.yaml" ]; then
+  # Create AMF deployment with annotations
+  cat > kustomize/base/visiting/amf/deployment.yaml.new << EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: v-amf
+  namespace: open5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: v-amf
+  template:
+    metadata:
+      labels:
+        app: v-amf
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |
+          $AMF_MULTUS
+    spec:
+      containers:
+        - name: v-amf
+          image: docker.io/library/amf:v2.7.5
+          imagePullPolicy: IfNotPresent
+          command: [ "open5gs-amfd", "-c", "/etc/open5gs/amf.yaml" ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/open5gs/amf.yaml
+              subPath: amf.yaml
+          ports:
+            - containerPort: 80
+              name: sbi
+            - containerPort: 38412
+              name: ngap
+      volumes:
+        - name: config
+          configMap:
+            name: v-amf-config
+EOF
+  mv kustomize/base/visiting/amf/deployment.yaml.new kustomize/base/visiting/amf/deployment.yaml
+  echo -e "${GREEN}Created AMF deployment with Multus annotations${NC}"
+fi
+
+# Update AMF config
 if [ -f "kustomize/base/visiting/amf/amf.yaml" ]; then
-  perl -i -pe 's/server:\s*\n\s*- address: 0.0.0.0/server:\n          - address: 192.168.30.101/g' "kustomize/base/visiting/amf/amf.yaml"
+  # Direct file editing
+  # Extract existing AMF config
+  EXISTING_AMF_CONFIG=$(cat kustomize/base/visiting/amf/amf.yaml)
+  # Replace the server address
+  UPDATED_AMF_CONFIG=$(echo "$EXISTING_AMF_CONFIG" | sed 's/server:.*address: 0.0.0.0/server:\n          - address: 192.168.30.101/g')
+  # Write updated config
+  echo "$UPDATED_AMF_CONFIG" > kustomize/base/visiting/amf/amf.yaml
   echo -e "${GREEN}Updated AMF config with Multus IPs${NC}"
 fi
 
 # Migrate PacketRusher
 mkdir -p kustomize/base/shared/packetrusher
+
+# Create PacketRusher config from existing configmap
 if [ -f "shared/packetrusher/configmap.yaml" ]; then
   # Extract config from ConfigMap
   grep -A 1000 "data:" "shared/packetrusher/configmap.yaml" | grep -v "data:" | sed '1d' > "kustomize/base/shared/packetrusher/config.yml"
   echo -e "${GREEN}Created PacketRusher config.yml${NC}"
   
-  # Update PacketRusher config with Multus IPs - using perl for safety
-  perl -i -pe "s/ip: ['\"']0.0.0.0['\"]*/ip: '192.168.30.102'/g" "kustomize/base/shared/packetrusher/config.yml"
-  perl -i -pe "s/ip: ['\"']v-amf.open5gs.svc.cluster.local['\"]*/ip: '192.168.30.101'/g" "kustomize/base/shared/packetrusher/config.yml"
+  # Update the config to use the correct IPs
+  sed -i "s/ip: '0.0.0.0'/ip: '192.168.30.102'/g" "kustomize/base/shared/packetrusher/config.yml"
+  sed -i "s/ip: 'v-amf.open5gs.svc.cluster.local'/ip: '192.168.30.101'/g" "kustomize/base/shared/packetrusher/config.yml"
   echo -e "${GREEN}Updated PacketRusher config with Multus IPs${NC}"
 fi
 
-if [ -f "shared/packetrusher/deployment.yaml" ]; then
-  cp "shared/packetrusher/deployment.yaml" "kustomize/base/shared/packetrusher/deployment.yaml"
-  echo -e "${GREEN}Copied PacketRusher deployment.yaml${NC}"
-  
-  # Add Multus annotations to PacketRusher
-  PR_MULTUS='[
+# Create PacketRusher deployment with Multus annotations
+PR_MULTUS='[
   {
     "name": "ngap-network",
     "interface": "ngap",
@@ -327,38 +522,58 @@ if [ -f "shared/packetrusher/deployment.yaml" ]; then
     "ips": ["192.168.20.103/24"]
   }
 ]'
-  
-  # Create a temporary file
-  TEMP_FILE=$(mktemp)
-  
-  # Add annotations to the pod template
-  AWK_SCRIPT=$(cat << 'EOF'
-BEGIN { in_metadata = 0; annotation_added = 0; }
-/metadata:/ && !in_metadata { in_metadata = 1; next; }
-/^ {6}labels:/ && in_metadata {
-  print $0;
-  print "      annotations:";
-  print "        k8s.v1.cni.cncf.io/networks: |";
-  print "          MULTUS_ANNOTATION";
-  annotation_added = 1;
-  next;
-}
-{ print $0; }
+
+if [ -f "shared/packetrusher/deployment.yaml" ]; then
+  # Create deployment file with annotations
+  cat > kustomize/base/shared/packetrusher/deployment.yaml << EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: packetrusher
+  namespace: open5gs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: packetrusher
+  template:
+    metadata:
+      labels:
+        app: packetrusher
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |
+          $PR_MULTUS
+    spec:
+      containers:
+        - name: packetrusher
+          image: ghcr.io/borjis131/packetrusher:20250225
+          imagePullPolicy: IfNotPresent
+          workingDir: /PacketRusher
+          command: [ "./packetrusher", "ue" ]
+          volumeMounts:
+            - name: config
+              mountPath: /PacketRusher/config/config.yml
+              subPath: config.yml
+          ports:
+            - containerPort: 38412
+              name: ngap
+              protocol: UDP
+            - containerPort: 2152
+              name: gtpu
+              protocol: UDP
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["NET_ADMIN"]
+      volumes:
+        - name: config
+          configMap:
+            name: packetrusher-config
 EOF
-)
-  
-  awk -v multus="$PR_MULTUS" '{ gsub("MULTUS_ANNOTATION", multus); print }' <<< "$AWK_SCRIPT" > "$TEMP_FILE"
-  
-  # Use the script to modify the deployment file
-  awk -f "$TEMP_FILE" "kustomize/base/shared/packetrusher/deployment.yaml" > "kustomize/base/shared/packetrusher/deployment.yaml.new"
-  mv "kustomize/base/shared/packetrusher/deployment.yaml.new" "kustomize/base/shared/packetrusher/deployment.yaml"
-  
-  # Clean up
-  rm "$TEMP_FILE"
-  
-  echo -e "${GREEN}Added Multus annotations to PacketRusher deployment.yaml${NC}"
+  echo -e "${GREEN}Created PacketRusher deployment with Multus annotations${NC}"
 fi
 
+# Copy PacketRusher service
 if [ -f "shared/packetrusher/service.yaml" ]; then
   cp "shared/packetrusher/service.yaml" "kustomize/base/shared/packetrusher/service.yaml"
   echo -e "${GREEN}Copied PacketRusher service.yaml${NC}"
