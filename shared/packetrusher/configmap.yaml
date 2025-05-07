@@ -7,10 +7,10 @@ data:
   config.yml: |
     gnodeb:
       controlif:
-        ip: '0.0.0.0'
+        ip: '192.168.30.102'
         port: 38412
       dataif:
-        ip: '0.0.0.0'
+        ip: '192.168.20.103'
         port: 2152
       plmnlist:
         mcc: '999'
@@ -47,7 +47,7 @@ data:
         nea3: false
 
     amfif:
-      - ip: 'v-amf.open5gs.svc.cluster.local'
+      - ip: '192.168.30.101'
         port: 38412
 
     logs:

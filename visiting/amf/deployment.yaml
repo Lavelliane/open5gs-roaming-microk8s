@@ -12,6 +12,15 @@ spec:
     metadata:
       labels:
         app: v-amf
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |
+          [
+            {
+              "name": "ngap-network",
+              "interface": "ngap",
+              "ips": ["192.168.30.101/24"]
+            }
+          ]
     spec:
       containers:
         - name: v-amf

@@ -22,7 +22,7 @@ data:
             - uri: http://v-nrf.open5gs.svc.cluster.local:80
       ngap:
         server:
-          - address: 0.0.0.0
+          - address: 192.168.30.101
       access_control:
         - plmn_id:
             mcc: 999

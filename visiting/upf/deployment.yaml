@@ -12,6 +12,20 @@ spec:
     metadata:
       labels:
         app: v-upf
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |
+          [
+            {
+              "name": "pfcp-network",
+              "interface": "pfcp",
+              "ips": ["192.168.10.101/24"]
+            },
+            {
+              "name": "gtpu-network",
+              "interface": "gtpu",
+              "ips": ["192.168.20.101/24"]
+            }
+          ]
     spec:
       containers:
         - name: v-upf

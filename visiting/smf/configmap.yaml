@@ -8,6 +8,7 @@ data:
     logger:
       file:
         path: /var/log/open5gs/smf.log
+      level: trace
 
     global:
 
@@ -21,19 +22,19 @@ data:
             - uri: http://v-nrf.open5gs.svc.cluster.local:80
       pfcp:
         server:
-          - address: 0.0.0.0
+          - address: 192.168.10.102
             port: 8805
         client:
           upf:
-            - address: v-upf.open5gs.svc.cluster.local
+            - address: 192.168.10.101
               port: 8805
       gtpu:
         server:
-          - address: 0.0.0.0
+          - address: 192.168.20.102
       session:
         - subnet: 10.45.0.0/16
           gateway: 10.45.0.1
       dns:
         - 8.8.8.8
         - 8.8.4.4
-      mtu: 1400 
+      mtu: 1400

@@ -12,6 +12,20 @@ spec:
     metadata:
       labels:
         app: packetrusher
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |
+          [
+            {
+              "name": "ngap-network",
+              "interface": "ngap",
+              "ips": ["192.168.30.102/24"]
+            },
+            {
+              "name": "gtpu-network",
+              "interface": "gtpu",
+              "ips": ["192.168.20.103/24"]
+            }
+          ]
     spec:
       containers:
         - name: packetrusher

@@ -8,18 +8,18 @@ data:
     logger:
       file:
         path: /var/log/open5gs/upf.log
+      level: trace
 
     global:
 
     upf:
       pfcp:
         server:
-          - address: 0.0.0.0
+          - address: 192.168.10.101
             port: 8805
-        client:
       gtpu:
         server:
-          - address: 0.0.0.0
+          - address: 192.168.20.101
       session:
         - subnet: 10.45.0.0/16
           gateway: 10.45.0.1

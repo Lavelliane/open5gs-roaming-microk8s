@@ -12,6 +12,20 @@ spec:
     metadata:
       labels:
         app: v-smf
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |
+          [
+            {
+              "name": "pfcp-network",
+              "interface": "pfcp",
+              "ips": ["192.168.10.102/24"]
+            },
+            {
+              "name": "gtpu-network",
+              "interface": "gtpu",
+              "ips": ["192.168.20.102/24"]
+            }
+          ]
     spec:
       containers:
         - name: v-smf
@@ -32,4 +46,4 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: v-smf-config 
+            name: v-smf-config
