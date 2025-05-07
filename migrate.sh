@@ -252,9 +252,10 @@ migrate_component_with_multus "visiting/smf" "kustomize/base/visiting/smf" "v-sm
 
 # Modify SMF config file with Multus interface IPs
 if [ -f "kustomize/base/visiting/smf/smf.yaml" ]; then
-  sed -i 's/address: 0.0.0.0/address: 192.168.10.102/g' "kustomize/base/visiting/smf/smf.yaml"
-  sed -i 's/upf:\n            - address: v-upf.open5gs.svc.cluster.local/upf:\n            - address: 192.168.10.101/g' "kustomize/base/visiting/smf/smf.yaml"
-  sed -i 's/server:\n          - address: 0.0.0.0/server:\n          - address: 192.168.20.102/g' "kustomize/base/visiting/smf/smf.yaml"
+  # Use perl instead of sed for safer multiline replacements
+  perl -i -pe 's/address: 0.0.0.0/address: 192.168.10.102/g' "kustomize/base/visiting/smf/smf.yaml"
+  perl -i -pe 's/upf:\s*\n\s*- address: v-upf.open5gs.svc.cluster.local/upf:\n            - address: 192.168.10.101/g' "kustomize/base/visiting/smf/smf.yaml"
+  perl -i -pe 's/server:\s*\n\s*- address: 0.0.0.0/server:\n          - address: 192.168.20.102/g' "kustomize/base/visiting/smf/smf.yaml"
   echo -e "${GREEN}Updated SMF config with Multus IPs${NC}"
 fi
 
@@ -275,8 +276,8 @@ migrate_component_with_multus "visiting/upf" "kustomize/base/visiting/upf" "v-up
 
 # Modify UPF config file with Multus interface IPs
 if [ -f "kustomize/base/visiting/upf/upf.yaml" ]; then
-  sed -i 's/address: 0.0.0.0/address: 192.168.10.101/g' "kustomize/base/visiting/upf/upf.yaml"
-  sed -i 's/server:\n          - address: 0.0.0.0/server:\n          - address: 192.168.20.101/g' "kustomize/base/visiting/upf/upf.yaml"
+  perl -i -pe 's/address: 0.0.0.0/address: 192.168.10.101/g' "kustomize/base/visiting/upf/upf.yaml"
+  perl -i -pe 's/server:\s*\n\s*- address: 0.0.0.0/server:\n          - address: 192.168.20.101/g' "kustomize/base/visiting/upf/upf.yaml"
   echo -e "${GREEN}Updated UPF config with Multus IPs${NC}"
 fi
 
@@ -292,7 +293,7 @@ migrate_component_with_multus "visiting/amf" "kustomize/base/visiting/amf" "v-am
 
 # Modify AMF config file with Multus interface IPs
 if [ -f "kustomize/base/visiting/amf/amf.yaml" ]; then
-  sed -i 's/server:\n          - address: 0.0.0.0/server:\n          - address: 192.168.30.101/g' "kustomize/base/visiting/amf/amf.yaml"
+  perl -i -pe 's/server:\s*\n\s*- address: 0.0.0.0/server:\n          - address: 192.168.30.101/g' "kustomize/base/visiting/amf/amf.yaml"
   echo -e "${GREEN}Updated AMF config with Multus IPs${NC}"
 fi
 
@@ -303,9 +304,9 @@ if [ -f "shared/packetrusher/configmap.yaml" ]; then
   grep -A 1000 "data:" "shared/packetrusher/configmap.yaml" | grep -v "data:" | sed '1d' > "kustomize/base/shared/packetrusher/config.yml"
   echo -e "${GREEN}Created PacketRusher config.yml${NC}"
   
-  # Update PacketRusher config with Multus IPs
-  sed -i 's/ip: .0.0.0.0./ip: .192.168.30.102./g' "kustomize/base/shared/packetrusher/config.yml"
-  sed -i 's/ip: .v-amf.open5gs.svc.cluster.local./ip: .192.168.30.101./g' "kustomize/base/shared/packetrusher/config.yml"
+  # Update PacketRusher config with Multus IPs - using perl for safety
+  perl -i -pe "s/ip: ['\"']0.0.0.0['\"]*/ip: '192.168.30.102'/g" "kustomize/base/shared/packetrusher/config.yml"
+  perl -i -pe "s/ip: ['\"']v-amf.open5gs.svc.cluster.local['\"]*/ip: '192.168.30.101'/g" "kustomize/base/shared/packetrusher/config.yml"
   echo -e "${GREEN}Updated PacketRusher config with Multus IPs${NC}"
 fi
 
