@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: v-smf-config
+  namespace: open5gs
+data:
+  smf.yaml: |
+    logger:
+      file:
+        path: /var/log/open5gs/smf.log
+      level: debug
+
+    global:
+
+    smf:
+      sbi:
+        server:
+          - address: 0.0.0.0
+            port: 80
+        client:
+          nrf:
+            - uri: http://v-nrf.open5gs.svc.cluster.local:80
+      pfcp:
+        server:
+          - address: $(POD_IP_PFCP)  # This will be replaced with the IP from Multus pfcp interface
+            port: 8805
+        client:
+          upf:
+            - address: v-upf-pfcp.open5gs.svc.cluster.local
+              port: 8805
+      gtpu:
+        server:
+          - address: 0.0.0.0
+      session:
+        - subnet: 10.45.0.0/16
+          gateway: 10.45.0.1
+      dns:
+        - 8.8.8.8
+        - 8.8.4.4
+      mtu: 1400

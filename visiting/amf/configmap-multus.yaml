@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: v-amf-config
+  namespace: open5gs
+data:
+  amf.yaml: |
+    logger:
+      file:
+        path: /var/log/open5gs/amf.log
+      level: debug
+
+    global:
+
+    amf:
+      sbi:
+        server:
+          - address: $(POD_IP_SBI)  # This will be replaced with the IP from Multus sbi interface
+            port: 80
+        client:
+          nrf:
+            - uri: http://v-nrf.open5gs.svc.cluster.local:80
+      ngap:
+        server:
+          - address: $(POD_IP_NGAP)  # This will be replaced with the IP from Multus ngap interface
+      access_control:
+        - plmn_id:
+            mcc: 999
+            mnc: 70
+        - plmn_id:
+            mcc: 001
+            mnc: 01
+      guami:
+        - plmn_id:
+            mcc: 999
+            mnc: 70
+          amf_id:
+            region: 2
+            set: 1
+      tai:
+        - plmn_id:
+            mcc: 999
+            mnc: 70
+          tac: 1
+        - plmn_id:
+            mcc: 001
+            mnc: 01
+          tac: 1
+      plmn_support:
+        - plmn_id:
+            mcc: 999
+            mnc: 70
+          s_nssai:
+            - sst: 1
+              sd: 000001
+        - plmn_id:
+            mcc: 001
+            mnc: 01
+          s_nssai:
+            - sst: 1
+              sd: 000001
+      security:
+        integrity_order: [ NIA2, NIA0, NIA1 ]
+        ciphering_order: [ NEA0, NEA2, NEA1 ]
+      network_name:
+        full: Open5GS
+      amf_name: open5gs-amf0
+      time:
+        t3512:
+          value: 540
