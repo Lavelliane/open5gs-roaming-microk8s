@@ -14,5 +14,5 @@ spec:
     - name: pfcp
       protocol: UDP
       port: 8805
-      targetPort: 8805
+      targetPort: pfcp
 
