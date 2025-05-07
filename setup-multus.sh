@@ -1,7 +1,6 @@
 #!/bin/bash
-# setup-multus.sh - Script to set up Multus CNI in MicroK8s
-
-set -e
+# Setup Multus CNI for MicroK8s
+# This script installs and configures Multus CNI for use with MicroK8s
 
 # Color codes for output
 GREEN='\033[0;32m'
@@ -10,30 +9,61 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}Setting up Multus CNI for MicroK8s...${NC}"
+echo -e "${BLUE}Checking MicroK8s status...${NC}"
+if ! microk8s status | grep -q "running"; then
+  echo -e "${RED}MicroK8s is not running. Please start MicroK8s first.${NC}"
+  exit 1
+fi
 
-# Enable required MicroK8s addons
 echo -e "${BLUE}Enabling required MicroK8s addons...${NC}"
 microk8s enable dns storage helm3
-microk8s status --wait-ready
 
-# Create the open5gs namespace if it doesn't exist
+# Create open5gs namespace if it doesn't exist
+echo -e "${BLUE}Creating open5gs namespace if it doesn't exist...${NC}"
 microk8s kubectl create namespace open5gs --dry-run=client -o yaml | microk8s kubectl apply -f -
 
-# Install Multus CNI using Helm
-echo -e "${BLUE}Installing Multus CNI using Helm...${NC}"
-microk8s helm3 repo add k8s-at-home https://k8s-at-home.com/charts/
-microk8s helm3 repo update
-microk8s helm3 install multus k8s-at-home/multus --namespace kube-system
+echo -e "${BLUE}Installing Multus CNI...${NC}"
+microk8s kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/master/deployments/multus-daemonset.yml
 
-# Wait for Multus to be ready
-echo -e "${BLUE}Waiting for Multus DaemonSet to be ready...${NC}"
-microk8s kubectl rollout status daemonset/multus -n kube-system --timeout=120s
+echo -e "${YELLOW}Waiting for Multus to be ready...${NC}"
+sleep 10
 
-# Create NetworkAttachmentDefinitions
-echo -e "${BLUE}Creating NetworkAttachmentDefinitions for 5G components...${NC}"
+# Check if Multus is installed
+echo -e "${BLUE}Verifying Multus installation...${NC}"
+PODS=$(microk8s kubectl get pods -n kube-system -l name=multus)
+if echo "$PODS" | grep -q "Running"; then
+  echo -e "${GREEN}Multus CNI installed successfully!${NC}"
+else
+  echo -e "${RED}Multus CNI installation failed. Please check the logs.${NC}"
+  echo -e "${YELLOW}You can check the logs with: microk8s kubectl logs -n kube-system -l name=multus${NC}"
+  exit 1
+fi
 
-# PFCP Network for SMF-UPF communication
+# Create default macvlan network-attachment-definition
+echo -e "${BLUE}Creating default macvlan network attachment definition...${NC}"
+cat <<EOF | microk8s kubectl apply -f -
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: macvlan-conf
+spec:
+  config: '{
+      "cniVersion": "0.3.1",
+      "type": "macvlan",
+      "master": "eth0",
+      "mode": "bridge",
+      "ipam": {
+        "type": "host-local",
+        "subnet": "10.45.0.0/16",
+        "rangeStart": "10.45.1.1",
+        "rangeEnd": "10.45.254.254",
+        "gateway": "10.45.0.1"
+      }
+    }'
+EOF
+
+# Create PFCP Network for SMF-UPF communication
+echo -e "${BLUE}Creating PFCP network attachment definition...${NC}"
 cat <<EOF | microk8s kubectl apply -f -
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
@@ -55,7 +85,8 @@ spec:
   }'
 EOF
 
-# GTP-U Network for user plane traffic
+# Create GTP-U Network for user plane traffic
+echo -e "${BLUE}Creating GTP-U network attachment definition...${NC}"
 cat <<EOF | microk8s kubectl apply -f -
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
@@ -77,7 +108,8 @@ spec:
   }'
 EOF
 
-# NGAP Network for AMF-gNodeB communication
+# Create NGAP Network for AMF-gNodeB communication
+echo -e "${BLUE}Creating NGAP network attachment definition...${NC}"
 cat <<EOF | microk8s kubectl apply -f -
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
@@ -99,6 +131,6 @@ spec:
   }'
 EOF
 
-echo -e "${GREEN}Multus CNI setup complete!${NC}"
-echo -e "${YELLOW}Note: You may need to adjust the network interface 'master' value if your MicroK8s host uses a different interface name than 'eth0'${NC}"
-echo -e "${BLUE}You can check the status of Multus with: microk8s kubectl get pods -n kube-system | grep multus${NC}"
+echo -e "${GREEN}Setup completed!${NC}"
+echo -e "${BLUE}You can now use Multus CNI in your 5G core deployment.${NC}"
+echo -e "${YELLOW}Note: If your network interface is not 'eth0', please modify the 'master' field in the network definitions.${NC}"
