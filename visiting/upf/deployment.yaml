@@ -13,7 +13,6 @@ spec:
       labels:
         app: v-upf
     spec:
-      hostNetwork: true  # Add this for direct host network access
       containers:
         - name: v-upf
           image: docker.io/library/upf:v2.7.5
