@@ -1,0 +1,113 @@
+# kustomize/base/common/packetrusher.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: packetrusher-config
+data:
+  config.yml: |
+    gnodeb:
+      controlif:
+        ip: '0.0.0.0'
+        port: 38412
+      dataif:
+        ip: '0.0.0.0'
+        port: 2152
+      plmnlist:
+        mcc: '999'
+        mnc: '70'
+        tac: '000001'
+        gnbid: '000008'
+      slicesupportlist:
+        sst: '01'
+        sd: '000001'
+
+    ue:
+      hplmn:
+        mcc: '001'
+        mnc: '01'
+      msin: '1234567891'
+      key: '7F176C500D47CF2090CB6D91F4A73479'
+      opc: '3D45770E83C7BBB6900F3653FDA6330F'
+      dnn: 'internet'
+      snssai:
+        sst: 01
+        sd: '000001'
+      amf: '8000'
+      sqn: '00000000'
+      protectionScheme: 0
+      integrity:
+        nia0: false
+        nia1: false
+        nia2: true
+        nia3: false
+      ciphering:
+        nea0: true
+        nea1: false
+        nea2: true
+        nea3: false
+
+    amfif:
+      - ip: 'v-amf-n2'
+        port: 38412
+
+    logs:
+      level: 4
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: packetrusher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: packetrusher
+  template:
+    metadata:
+      labels:
+        app: packetrusher
+      annotations:
+        k8s.v1.cni.cncf.io/networks: 5g-n2-net,5g-n3-net
+    spec:
+      containers:
+        - name: packetrusher
+          image: ghcr.io/borjis131/packetrusher:20250225
+          imagePullPolicy: IfNotPresent
+          workingDir: /PacketRusher
+          command: [ "./packetrusher", "ue" ]
+          volumeMounts:
+            - name: config
+              mountPath: /PacketRusher/config/config.yml
+              subPath: config.yml
+          ports:
+            - containerPort: 38412
+              name: ngap
+              protocol: UDP
+            - containerPort: 2152
+              name: gtpu
+              protocol: UDP
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["NET_ADMIN"]
+      volumes:
+        - name: config
+          configMap:
+            name: packetrusher-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: packetrusher
+spec:
+  selector:
+    app: packetrusher
+  ports:
+    - name: ngap
+      protocol: UDP
+      port: 38412
+      targetPort: ngap
+    - name: gtpu
+      protocol: UDP
+      port: 2152
+      targetPort: gtpu

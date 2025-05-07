@@ -1,0 +1,73 @@
+# kustomize/base/network-definitions/5g-networks.yaml
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: 5g-n2-net
+spec:
+  config: '{
+      "cniVersion": "0.3.1",
+      "type": "macvlan",
+      "master": "eth0",
+      "mode": "bridge",
+      "ipam": {
+        "type": "host-local",
+        "subnet": "10.100.100.0/24",
+        "rangeStart": "10.100.100.100",
+        "rangeEnd": "10.100.100.200"
+      }
+    }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: 5g-n3-net
+spec:
+  config: '{
+      "cniVersion": "0.3.1",
+      "type": "macvlan",
+      "master": "eth0",
+      "mode": "bridge",
+      "ipam": {
+        "type": "host-local",
+        "subnet": "10.100.200.0/24",
+        "rangeStart": "10.100.200.100",
+        "rangeEnd": "10.100.200.200"
+      }
+    }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: 5g-n4-net
+spec:
+  config: '{
+      "cniVersion": "0.3.1",
+      "type": "macvlan",
+      "master": "eth0",
+      "mode": "bridge",
+      "ipam": {
+        "type": "host-local",
+        "subnet": "10.100.50.0/24",
+        "rangeStart": "10.100.50.100",
+        "rangeEnd": "10.100.50.200"
+      }
+    }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: 5g-n6-net
+spec:
+  config: '{
+      "cniVersion": "0.3.1",
+      "type": "macvlan",
+      "master": "eth0",
+      "mode": "bridge",
+      "ipam": {
+        "type": "host-local",
+        "subnet": "10.45.0.0/16",
+        "rangeStart": "10.45.1.1",
+        "rangeEnd": "10.45.254.254",
+        "gateway": "10.45.0.1"
+      }
+    }'

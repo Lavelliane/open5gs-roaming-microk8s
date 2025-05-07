@@ -1,0 +1,11 @@
+# kustomize/overlays/microk8s/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: open5gs
+
+patchesStrategicMerge:
+  - patches/network-adjustments.yaml

@@ -1,0 +1,136 @@
+# kustomize/base/visiting-components/amf.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: v-amf-config
+data:
+  amf.yaml: |
+    logger:
+      file:
+        path: /var/log/open5gs/amf.log
+      level: debug
+
+    global:
+
+    amf:
+      sbi:
+        server:
+          - address: 0.0.0.0
+            port: 80
+        client:
+          nrf:
+            - uri: http://v-nrf.open5gs.svc.cluster.local:80
+      ngap:
+        server:
+          - address: 0.0.0.0
+      access_control:
+        - plmn_id:
+            mcc: 999
+            mnc: 70
+        - plmn_id:
+            mcc: 001
+            mnc: 01
+      guami:
+        - plmn_id:
+            mcc: 999
+            mnc: 70
+          amf_id:
+            region: 2
+            set: 1
+      tai:
+        - plmn_id:
+            mcc: 999
+            mnc: 70
+          tac: 1
+        - plmn_id:
+            mcc: 001
+            mnc: 01
+          tac: 1
+      plmn_support:
+        - plmn_id:
+            mcc: 999
+            mnc: 70
+          s_nssai:
+            - sst: 1
+              sd: 000001
+        - plmn_id:
+            mcc: 001
+            mnc: 01
+          s_nssai:
+            - sst: 1
+              sd: 000001
+      security:
+        integrity_order: [ NIA2, NIA0, NIA1 ]
+        ciphering_order: [ NEA0, NEA2, NEA1 ]
+      network_name:
+        full: Open5GS
+      amf_name: open5gs-amf0
+      time:
+        t3512:
+          value: 540
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: v-amf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: v-amf
+  template:
+    metadata:
+      labels:
+        app: v-amf
+      annotations:
+        k8s.v1.cni.cncf.io/networks: 5g-n2-net
+    spec:
+      containers:
+        - name: v-amf
+          image: docker.io/library/amf:v2.7.5
+          imagePullPolicy: IfNotPresent
+          command: [ "open5gs-amfd", "-c", "/etc/open5gs/amf.yaml" ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/open5gs/amf.yaml
+              subPath: amf.yaml
+          ports:
+            - containerPort: 80
+              name: sbi
+            - containerPort: 38412
+              name: ngap
+      volumes:
+        - name: config
+          configMap:
+            name: v-amf-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: v-amf
+spec:
+  selector:
+    app: v-amf
+  ports:
+    - name: sbi
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    - name: ngap
+      port: 38412
+      targetPort: 38412
+      protocol: SCTP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: v-amf-n2
+spec:
+  selector:
+    app: v-amf
+  ports:
+    - name: ngap
+      port: 38412
+      targetPort: 38412
+      protocol: SCTP
+  clusterIP: None

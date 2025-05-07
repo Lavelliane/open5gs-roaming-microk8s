@@ -1,0 +1,27 @@
+# kustomize/overlays/microk8s/patches/network-adjustments.yaml
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: 5g-n4-net
+spec:
+  config: '{
+      "cniVersion": "0.3.1",
+      "type": "macvlan",
+      "master": "eth0",
+      "mode": "bridge",
+      "ipam": {
+        "type": "host-local",
+        "subnet": "10.100.50.0/24",
+        "rangeStart": "10.100.50.100",
+        "rangeEnd": "10.100.50.200"
+      }
+    }'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: v-upf
+spec:
+  template:
+    spec:
+      hostNetwork: true

@@ -1,0 +1,24 @@
+# kustomize/base/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - network-definitions/5g-networks.yaml
+  - common/mongodb.yaml
+  - home-components/nrf.yaml
+  - home-components/udr.yaml
+  - home-components/udm.yaml
+  - home-components/ausf.yaml
+  - home-components/sepp.yaml
+  - visiting-components/nrf.yaml
+  - visiting-components/ausf.yaml
+  - visiting-components/nssf.yaml
+  - visiting-components/bsf.yaml
+  - visiting-components/pcf.yaml
+  - visiting-components/sepp.yaml
+  - visiting-components/smf.yaml
+  - visiting-components/upf.yaml
+  - visiting-components/amf.yaml
+  - common/packetrusher.yaml
+
+namespace: open5gs

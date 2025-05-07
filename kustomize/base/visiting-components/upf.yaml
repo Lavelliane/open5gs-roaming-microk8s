@@ -1,0 +1,108 @@
+# kustomize/base/visiting-components/upf.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: v-upf-config
+data:
+  upf.yaml: |
+    logger:
+      file:
+        path: /var/log/open5gs/upf.log
+      level: debug
+
+    global:
+
+    upf:
+      pfcp:
+        server:
+          - address: 0.0.0.0
+            port: 8805
+      gtpu:
+        server:
+          - address: 0.0.0.0
+      session:
+        - subnet: 10.45.0.0/16
+          gateway: 10.45.0.1
+          dev: ogstun
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: v-upf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: v-upf
+  template:
+    metadata:
+      labels:
+        app: v-upf
+      annotations:
+        k8s.v1.cni.cncf.io/networks: 5g-n3-net,5g-n4-net,5g-n6-net
+    spec:
+      containers:
+        - name: v-upf
+          image: docker.io/library/upf:v2.7.5
+          imagePullPolicy: IfNotPresent 
+          command: [ "open5gs-upfd", "-c", "/etc/open5gs/upf.yaml" ]
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["NET_ADMIN", "NET_RAW", "SYS_ADMIN"]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/open5gs/upf.yaml
+              subPath: upf.yaml
+            - name: dev-net-tun
+              mountPath: /dev/net/tun
+            - name: var-log
+              mountPath: /var/log/open5gs
+          ports:
+            - name: pfcp
+              containerPort: 8805
+              protocol: UDP
+            - name: gtpu
+              containerPort: 2152
+              protocol: UDP
+      volumes:
+        - name: config
+          configMap:
+            name: v-upf-config
+        - name: dev-net-tun
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+        - name: var-log
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: v-upf
+spec:
+  selector:
+    app: v-upf
+  ports:
+    - name: pfcp
+      protocol: UDP
+      port: 8805
+      targetPort: 8805
+    - name: gtpu
+      protocol: UDP
+      port: 2152
+      targetPort: 2152
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: v-upf-n4
+spec:
+  selector:
+    app: v-upf
+  ports:
+    - name: pfcp
+      protocol: UDP
+      port: 8805
+      targetPort: 8805
+  clusterIP: None

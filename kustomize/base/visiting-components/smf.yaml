@@ -1,0 +1,108 @@
+# kustomize/base/visiting-components/smf.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: v-smf-config
+data:
+  smf.yaml: |
+    logger:
+      file:
+        path: /var/log/open5gs/smf.log
+      level: debug
+
+    global:
+
+    smf:
+      sbi:
+        server:
+          - address: 0.0.0.0
+            port: 80
+        client:
+          nrf:
+            - uri: http://v-nrf.open5gs.svc.cluster.local:80
+      pfcp:
+        server:
+          - address: 0.0.0.0
+            port: 8805
+        client:
+          upf:
+            - address: v-upf-n4
+              port: 8805
+      gtpu:
+        server:
+          - address: 0.0.0.0
+      session:
+        - subnet: 10.45.0.0/16
+          gateway: 10.45.0.1
+      dns:
+        - 8.8.8.8
+        - 8.8.4.4
+      mtu: 1400
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: v-smf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: v-smf
+  template:
+    metadata:
+      labels:
+        app: v-smf
+      annotations:
+        k8s.v1.cni.cncf.io/networks: 5g-n4-net
+    spec:
+      containers:
+        - name: v-smf
+          image: docker.io/library/smf:v2.7.5
+          imagePullPolicy: IfNotPresent
+          command: [ "open5gs-smfd", "-c", "/etc/open5gs/smf.yaml" ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/open5gs/smf.yaml
+              subPath: smf.yaml
+          ports:
+            - containerPort: 80
+              name: sbi
+              protocol: TCP
+            - containerPort: 8805
+              name: pfcp
+              protocol: UDP
+      volumes:
+        - name: config
+          configMap:
+            name: v-smf-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: v-smf
+spec:
+  selector:
+    app: v-smf
+  ports:
+    - name: sbi
+      protocol: TCP
+      port: 80
+      targetPort: sbi 
+    - name: pfcp
+      protocol: UDP
+      port: 8805
+      targetPort: pfcp
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: v-smf-n4
+spec:
+  selector:
+    app: v-smf
+  ports:
+    - name: pfcp
+      protocol: UDP
+      port: 8805
+      targetPort: pfcp
+  clusterIP: None
