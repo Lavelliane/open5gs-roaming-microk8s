@@ -1,7 +1,7 @@
 #!/bin/bash
-
 # add-subscriber.sh
-# Color codes
+
+# Color codes for output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 RED='\033[0;31m'
@@ -11,35 +11,8 @@ NC='\033[0m' # No Color
 # Default values
 NAMESPACE="open5gs"
 IMSI="001011234567891"
-KEY="7F176C500D47CF2090CB6D91F4A73479"
+KEY="7F176C500D47CF2090CB6D91F4A73479" 
 OPC="3D45770E83C7BBB6900F3653FDA6330F"
-
-# Parse command line arguments
-while [[ $# -gt 0 ]]; do
-  case $1 in
-    --namespace)
-      NAMESPACE="$2"
-      shift 2
-      ;;
-    --imsi)
-      IMSI="$2"
-      shift 2
-      ;;
-    --key)
-      KEY="$2"
-      shift 2
-      ;;
-    --opc)
-      OPC="$2"
-      shift 2
-      ;;
-    *)
-      echo "Unknown argument: $1"
-      echo "Usage: $0 [--namespace namespace] [--imsi IMSI] [--key KEY] [--opc OPC]"
-      exit 1
-      ;;
-  esac
-done
 
 # Find MongoDB pod
 echo -e "${BLUE}Finding MongoDB pod...${NC}"
@@ -47,7 +20,7 @@ MONGODB_POD=$(microk8s kubectl get pods -n $NAMESPACE -l app=mongodb -o jsonpath
 
 if [ -z "$MONGODB_POD" ]; then
   echo -e "${RED}Error: MongoDB pod not found${NC}"
-  echo -e "${YELLOW}Checking pods in namespace $NAMESPACE:${NC}"
+  echo -e "${YELLOW}Checking all pods in namespace:${NC}"
   microk8s kubectl get pods -n $NAMESPACE
   exit 1
 fi
@@ -144,10 +117,6 @@ if (subscriber) {
 } else {
     print("ERROR: Failed to add subscriber " + "$IMSI");
 }
-
-// Count total subscribers
-var count = db.subscribers.count();
-print("Total subscribers in database: " + count);
 EOF
 
 # Copy script to pod
