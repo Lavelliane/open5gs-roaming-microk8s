@@ -2,6 +2,7 @@
 
 # Script to set up Multus CNI on MicroK8s
 # Created: May 2025
+# Updated to fix Multus pod readiness issue
 
 # Exit on error
 set -e
@@ -32,72 +33,153 @@ echo -e "${YELLOW}Checking required addons...${NC}"
 if ! microk8s status | grep -q "dns: enabled"; then
     echo -e "${YELLOW}Enabling DNS addon...${NC}"
     microk8s enable dns
+    sleep 10
 fi
 
 if ! microk8s status | grep -q "storage: enabled"; then
     echo -e "${YELLOW}Enabling storage addon...${NC}"
     microk8s enable storage
+    sleep 10
 fi
 
-# Create a directory for CNI config
+# Create directory for CNI config
 echo -e "${YELLOW}Creating CNI configuration directory...${NC}"
 CNI_DIR="/var/snap/microk8s/current/args/cni-network"
-sudo mkdir -p $CNI_DIR
+if [ ! -d "$CNI_DIR" ]; then
+    sudo mkdir -p $CNI_DIR
+fi
 
-# Download and install Multus CNI
-echo -e "${YELLOW}Downloading Multus CNI...${NC}"
-MULTUS_VERSION="v4.0.2"
-sudo wget -O /tmp/multus.yml https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/$MULTUS_VERSION/deployments/multus-daemonset.yml
+# Check if Multus is already installed
+echo -e "${YELLOW}Checking if Multus is already installed...${NC}"
+if microk8s kubectl get customresourcedefinition network-attachment-definitions.k8s.cni.cncf.io &>/dev/null; then
+    echo -e "${GREEN}Multus CRD already exists, continuing with existing installation${NC}"
+else
+    # Using Helm to install Multus (more reliable)
+    echo -e "${YELLOW}Installing Multus using Helm...${NC}"
+    
+    # Check if helm3 addon is enabled
+    if ! microk8s status | grep -q "helm3: enabled"; then
+        echo -e "${YELLOW}Enabling helm3 addon...${NC}"
+        microk8s enable helm3
+        sleep 10
+    fi
+    
+    # Add NetworkAttachmentDefinition CRD manually first (sometimes helm chart fails to add it)
+    echo -e "${YELLOW}Adding NetworkAttachmentDefinition CRD...${NC}"
+    sudo wget -O /tmp/multus-crd.yaml https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/master/deployments/multus/crds/crd.yaml
+    microk8s kubectl apply -f /tmp/multus-crd.yaml
+    
+    # Add Helm repo and install Multus
+    echo -e "${YELLOW}Adding Helm repo and installing Multus...${NC}"
+    microk8s helm3 repo add nfvpe https://kubevirt.github.io/helm-charts/
+    microk8s helm3 repo update
+    microk8s helm3 install multus nfvpe/multus --set image.tag=latest --set cni.image.tag=latest
+    
+    echo -e "${YELLOW}Waiting for Multus resources to be created...${NC}"
+    sleep 20
+fi
 
-# Update multus ConfigMap to work with MicroK8s
-echo -e "${YELLOW}Customizing Multus configuration for MicroK8s...${NC}"
-sed -i 's|/etc/cni/net.d|/var/snap/microk8s/current/args/cni-network|g' /tmp/multus.yml
-sed -i 's|/opt/cni/bin|/var/snap/microk8s/current/opt/cni/bin|g' /tmp/multus.yml
-
-# Apply Multus DaemonSet
-echo -e "${YELLOW}Applying Multus DaemonSet...${NC}"
-microk8s kubectl apply -f /tmp/multus.yml
-
-# Wait for Multus DaemonSet to be ready
-echo -e "${YELLOW}Waiting for Multus DaemonSet to be ready...${NC}"
-while [[ $(microk8s kubectl get pods -n kube-system -l name=multus -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do
-    echo -e "${YELLOW}Waiting for Multus pod to be ready...${NC}"
-    sleep 5
-done
-
-# Create macvlan CNI config
+# Create macvlan CNI config - more reliable approach for MicroK8s
 echo -e "${YELLOW}Creating macvlan CNI configuration...${NC}"
-cat <<EOF | sudo tee $CNI_DIR/00-multus.conf
+MACVLAN_CONF=$(cat <<EOF
 {
-  "name": "multus-cni-network",
-  "type": "multus",
-  "kubeconfig": "/var/snap/microk8s/current/credentials/client.config",
-  "delegates": [
+  "name": "macvlan-conf",
+  "cniVersion": "0.3.1",
+  "plugins": [
     {
-      "type": "calico",
-      "name": "calico-k8s-network",
-      "cniVersion": "0.3.1",
-      "datastore_type": "kubernetes",
-      "nodename": "__KUBERNETES_NODE_NAME__",
+      "type": "macvlan",
+      "capabilities": {"ips": true},
+      "master": "eth0",
+      "mode": "bridge",
       "ipam": {
         "type": "host-local",
-        "subnet": "10.1.0.0/16"
+        "ranges": [
+          [
+            {
+              "subnet": "10.10.0.0/16",
+              "rangeStart": "10.10.1.20",
+              "rangeEnd": "10.10.1.100"
+            }
+          ]
+        ],
+        "routes": [
+          { "dst": "0.0.0.0/0" }
+        ]
       }
     }
   ]
 }
 EOF
+)
 
-# Restart microk8s to apply changes
-echo -e "${YELLOW}Restarting MicroK8s to apply changes...${NC}"
-microk8s stop
-sleep 5
-microk8s start
-sleep 10
+echo "$MACVLAN_CONF" | sudo tee $CNI_DIR/10-macvlan.conflist > /dev/null
 
-# Wait for microk8s to be ready
-echo -e "${YELLOW}Waiting for MicroK8s to be ready...${NC}"
-microk8s status --wait-ready
+# Verify Multus installation
+echo -e "${YELLOW}Verifying Multus installation...${NC}"
+TIMEOUT=120
+START_TIME=$(date +%s)
+
+while true; do
+    CURRENT_TIME=$(date +%s)
+    ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+    
+    if [ $ELAPSED_TIME -gt $TIMEOUT ]; then
+        echo -e "${RED}Timeout waiting for Multus pod to be ready. Please check the logs manually:${NC}"
+        echo -e "${YELLOW}microk8s kubectl get pods --all-namespaces | grep multus${NC}"
+        echo -e "${YELLOW}microk8s kubectl logs -n kube-system <multus-pod-name>${NC}"
+        break
+    fi
+    
+    # Check if NetworkAttachmentDefinition CRD exists
+    if microk8s kubectl get customresourcedefinition network-attachment-definitions.k8s.cni.cncf.io &>/dev/null; then
+        echo -e "${GREEN}Multus CRD is installed${NC}"
+        MULTUS_READY=true
+        break
+    else
+        echo -e "${YELLOW}Waiting for Multus CRD to be created (${ELAPSED_TIME}s/${TIMEOUT}s)...${NC}"
+        sleep 5
+    fi
+done
+
+if [ "$MULTUS_READY" != "true" ]; then
+    echo -e "${RED}Failed to install Multus CRD. Trying an alternative approach...${NC}"
+    
+    # Alternative approach - applying Multus directly
+    echo -e "${YELLOW}Applying Multus directly...${NC}"
+    sudo wget -O /tmp/multus-daemonset.yaml https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/master/deployments/multus-daemonset.yml
+    
+    # Apply the Multus DaemonSet
+    microk8s kubectl apply -f /tmp/multus-daemonset.yaml
+    
+    echo -e "${YELLOW}Waiting for Multus CRD to be created...${NC}"
+    TIMEOUT=120
+    START_TIME=$(date +%s)
+    
+    while true; do
+        CURRENT_TIME=$(date +%s)
+        ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+        
+        if [ $ELAPSED_TIME -gt $TIMEOUT ]; then
+            echo -e "${RED}Timeout waiting for Multus CRD. Please check the status manually.${NC}"
+            break
+        fi
+        
+        if microk8s kubectl get customresourcedefinition network-attachment-definitions.k8s.cni.cncf.io &>/dev/null; then
+            echo -e "${GREEN}Multus CRD is installed${NC}"
+            MULTUS_READY=true
+            break
+        else
+            echo -e "${YELLOW}Waiting for Multus CRD to be created (${ELAPSED_TIME}s/${TIMEOUT}s)...${NC}"
+            sleep 5
+        fi
+    done
+fi
+
+if [ "$MULTUS_READY" != "true" ]; then
+    echo -e "${RED}Failed to install Multus using both methods.${NC}"
+    echo -e "${RED}Please check the MicroK8s documentation or try a manual installation.${NC}"
+    exit 1
+fi
 
 # Create NetworkAttachmentDefinitions in the open5gs namespace
 echo -e "${YELLOW}Creating NetworkAttachmentDefinitions for 5G Core components...${NC}"
@@ -197,6 +279,10 @@ spec:
   }'
 EOF
 
-echo -e "${GREEN}Multus CNI setup completed successfully!${NC}"
+# Verify NetworkAttachmentDefinitions were created
+echo -e "${YELLOW}Verifying NetworkAttachmentDefinitions...${NC}"
+microk8s kubectl get network-attachment-definitions -n open5gs
+
+echo -e "${GREEN}Multus CNI setup completed.${NC}"
 echo -e "${BLUE}You can now use Multus network interfaces in your 5G Core deployments.${NC}"
-echo -e "${YELLOW}Note: You may need to modify your interface settings based on your specific network configuration.${NC}"
+echo -e "${YELLOW}Note: If you still face issues, try restarting MicroK8s with 'microk8s stop && microk8s start'${NC}"
