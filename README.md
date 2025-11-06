@@ -69,8 +69,6 @@ alias kubectl='microk8s kubectl'
 
 ## Deployment
 
-[Add deployment instructions here]
-
 ## Troubleshooting
 
 [Add troubleshooting steps here]
