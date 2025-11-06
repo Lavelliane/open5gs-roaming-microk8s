@@ -66,9 +66,3 @@ Or create an alias:
 ```bash
 alias kubectl='microk8s kubectl'
 ```
-
-## Deployment
-
-## Troubleshooting
-
-[Add troubleshooting steps here]
